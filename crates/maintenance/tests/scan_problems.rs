@@ -59,3 +59,27 @@ fn an_unmarked_level_outside_the_table_is_refused_and_a_missing_workspace_is_an_
     let err = Workspace::scan(Path::new("/no/such/workspace")).err().unwrap();
     assert!(err.to_string().starts_with("[MAINT6005] the workspace could not be read: /no/such/workspace"), "{err}");
 }
+
+#[test]
+fn a_golden_naming_a_writer_that_is_not_one_is_refused() {
+    let root = workspace(
+        "golden",
+        r#"
+pub fn plain() -> Vec<u8> { vec![1] }
+
+#[wire_writer]
+pub fn bytes() -> Vec<u8> { vec![2] }
+
+#[golden(writer = crate::plain)]
+pub fn pins_plain() {}
+
+#[golden(writer = "probe::bytes")]
+pub fn pins_bytes() {}
+"#,
+        "",
+    );
+    let report = Workspace::scan(&root).unwrap().golden();
+    assert_eq!(codes(&report.findings), ["MAINT6051"]);
+    assert_eq!(report.findings[0].message, "[MAINT6051] a golden test names a writer that is not a #[wire_writer]: probe::pins_plain pins probe::plain");
+    assert_eq!((report.counts["wire_writers"], report.counts["goldens"]), (1, 2));
+}
