@@ -1,0 +1,5 @@
+error: [MAINT0003] the attribute is written twice on one item: #[owner]
+ --> tests/ui/fail/owner_twice.rs:4:3
+  |
+4 | #[owner("web")]
+  |   ^^^^^

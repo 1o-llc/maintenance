@@ -1,0 +1,5 @@
+error: [MAINT1010] sensitivity_levels! declares at least one level
+ --> tests/ui/fail/levels_empty.rs:2:9
+  |
+2 |     pub Nothing {}
+  |         ^^^^^^^

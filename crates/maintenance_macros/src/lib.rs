@@ -7,6 +7,13 @@
 //! - `#[owner("platform")]` records who keeps an item.
 //! - `#[requires_review(reason = "...")]` records that a change to an item needs a second reader.
 //! - `#[deprecated_after("2026-12-01", reason = "...")]` deprecates an item, and fails the build once the date passes.
+//! - `#[mechanism("retry policy")]` names the one item that is the one place for a rule; a second claim is refused.
+//! - `#[boundary(allowed = ["api"])]` on an inline module, or `boundary_here!(allowed = ["api"]);` inside a module or a
+//!   crate root, names the crates allowed to use what is inside.
+//! - `#[supersedes("crate::old")]` on a replacement: the check lists what still uses the old item.
+//! - `#[reads_env("KEY")]` where a key is read: the check refuses a key no declaration file declares.
+//! - `#[wire_writer]` on a function that writes bytes others read, and `#[golden(writer = path)]` on the test that
+//!   pins them: the check refuses a writer with no golden.
 //!
 //! The marks are recorded twice from one reading: in the binary (`maintenance_core::registry::linked`) and, by
 //! `sensitivity registry`, in `.maintenance/registry.json`. Every refusal is a `[MAINT....]` code from the one table
@@ -45,6 +52,50 @@ pub fn requires_review(args: TokenStream, item: TokenStream) -> TokenStream {
 #[proc_macro_attribute]
 pub fn deprecated_after(args: TokenStream, item: TokenStream) -> TokenStream {
     marks::deprecated_after(args.into(), item.into()).into()
+}
+
+/// `#[mechanism("name")]`: this item is the one place for the rule `name`.
+#[proc_macro_attribute]
+pub fn mechanism(args: TokenStream, item: TokenStream) -> TokenStream {
+    marks::mechanism(args.into(), item.into()).into()
+}
+
+/// `#[boundary(allowed = ["crate_a", "crate_b"])]` on an inline `mod`: the crates, besides its own, that may use
+/// what is inside. For a crate root or a module in its own file (where an attribute macro cannot go on stable Rust),
+/// write `boundary_here!(allowed = [...]);` inside it.
+#[proc_macro_attribute]
+pub fn boundary(args: TokenStream, item: TokenStream) -> TokenStream {
+    marks::boundary(args.into(), item.into()).into()
+}
+
+/// `boundary_here!(allowed = ["crate_a"]);` inside a module or at a crate root: `#[boundary]` for the module it is in.
+#[proc_macro]
+pub fn boundary_here(input: TokenStream) -> TokenStream {
+    marks::boundary_here(input.into()).into()
+}
+
+/// `#[supersedes("path::to::old")]` (or `#[supersedes(path::to::old)]`) on the item that replaces `old`.
+#[proc_macro_attribute]
+pub fn supersedes(args: TokenStream, item: TokenStream) -> TokenStream {
+    marks::supersedes(args.into(), item.into()).into()
+}
+
+/// `#[reads_env("KEY", ...)]` on the item that reads the environment keys.
+#[proc_macro_attribute]
+pub fn reads_env(args: TokenStream, item: TokenStream) -> TokenStream {
+    marks::reads_env(args.into(), item.into()).into()
+}
+
+/// `#[golden(writer = path::to::writer)]` on a test that pins `writer`'s bytes. The path is checked by the compiler.
+#[proc_macro_attribute]
+pub fn golden(args: TokenStream, item: TokenStream) -> TokenStream {
+    marks::golden(args.into(), item.into()).into()
+}
+
+/// `#[wire_writer]` on a function whose bytes something else reads: it needs a `#[golden]` test.
+#[proc_macro_attribute]
+pub fn wire_writer(args: TokenStream, item: TokenStream) -> TokenStream {
+    marks::wire_writer(args.into(), item.into()).into()
 }
 
 /// `#[timed_test]`, `#[timed_test(max = "2s")]`, `#[timed_test(class = "integration")]` on a test fn. Above

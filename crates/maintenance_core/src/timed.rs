@@ -181,32 +181,67 @@ pub fn slowest(records: &[Record]) -> Vec<&Record> {
     out
 }
 
-/// The report `timed_test report` prints: the slowest tests, at most `top`.
-pub fn render_report(records: &[Record], unreadable: usize, top: usize) -> String {
-    let slow = slowest(records);
-    let mut out = format!("slowest tests, the latest run of each: {} shown of {}\n", slow.len().min(top), slow.len());
-    out.push_str(&format!("{:>10}  {:>10}  {:>6}  {:<8}  {}\n", "took", "threshold", "of it", "outcome", "test"));
-    for r in slow.iter().take(top) {
-        let share = if r.max_ms == 0 { 0 } else { r.ms.saturating_mul(100) / r.max_ms };
-        let outcome = match r.outcome {
-            Outcome::Passed => "passed",
-            Outcome::Over => "OVER",
-            Outcome::Panicked => "panicked",
-        };
-        let threshold = match &r.class {
-            Some(class) => format!("{} {class}", show_ms(r.max_ms)),
-            None => show_ms(r.max_ms),
-        };
-        out.push_str(&format!("{:>10}  {:>10}  {:>5}%  {:<8}  {}  ({}:{})\n", show_ms(r.ms), threshold, share, outcome, r.test, r.file, r.line));
+/// The format [`TimingReport`] is written in.
+pub const REPORT_FORMAT: u32 = 1;
+
+/// What [`report`] hands back: the latest run of every test, slowest first.
+///
+/// ```json
+/// { "format": 1, "source": ".../.maintenance/timings", "tests": [Record, ...], "over": 1, "unreadable": 0 }
+/// ```
+///
+/// `tests` are [`Record`]s (one JSON line of the run file each), `over` is how many of them ran past their threshold
+/// (`MAINT2050`), `unreadable` how many lines did not read and are not counted.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct TimingReport {
+    pub format: u32,
+    pub source: String,
+    pub tests: Vec<Record>,
+    pub over: u64,
+    pub unreadable: u64,
+}
+
+/// The timing report under `path`: a `.jsonl` run file, a folder of them, or a workspace root holding
+/// `.maintenance/timings`.
+pub fn report(path: &Path) -> std::io::Result<TimingReport> {
+    let (records, unreadable) = read_records(path)?;
+    Ok(TimingReport::of(path, &records, unreadable))
+}
+
+impl TimingReport {
+    /// The report of `records` read from `source`.
+    pub fn of(source: &Path, records: &[Record], unreadable: usize) -> Self {
+        let tests: Vec<Record> = slowest(records).into_iter().cloned().collect();
+        let over = tests.iter().filter(|r| r.outcome == Outcome::Over).count() as u64;
+        Self { format: REPORT_FORMAT, source: source.display().to_string(), tests, over, unreadable: unreadable as u64 }
     }
-    let over = slow.iter().filter(|r| r.outcome == Outcome::Over).count();
-    if over > 0 {
-        out.push_str(&format!("{over} over threshold [{}]\n", Code::OverThreshold.code()));
+
+    /// The report as text: the slowest tests, at most `top`.
+    pub fn render(&self, top: usize) -> String {
+        let mut out = format!("slowest tests, the latest run of each: {} shown of {}\n", self.tests.len().min(top), self.tests.len());
+        out.push_str(&format!("{:>10}  {:>16}  {:>6}  {:<8}  {}\n", "took", "threshold", "of it", "outcome", "test"));
+        for r in self.tests.iter().take(top) {
+            let share = if r.max_ms == 0 { 0 } else { r.ms.saturating_mul(100) / r.max_ms };
+            let outcome = match r.outcome {
+                Outcome::Passed => "passed",
+                Outcome::Over => "OVER",
+                Outcome::Panicked => "panicked",
+            };
+            let threshold = match &r.class {
+                Some(class) => format!("{} {class}", show_ms(r.max_ms)),
+                None => show_ms(r.max_ms),
+            };
+            out.push_str(&format!("{:>10}  {:>16}  {:>5}%  {:<8}  {}  ({}:{})\n", show_ms(r.ms), threshold, share, outcome, r.test, r.file, r.line));
+        }
+        if self.over > 0 {
+            out.push_str(&format!("{} over threshold [{}]\n", self.over, Code::OverThreshold.code()));
+        }
+        if self.unreadable > 0 {
+            out.push_str(&format!("{} lines did not read and are not counted\n", self.unreadable));
+        }
+        out
     }
-    if unreadable > 0 {
-        out.push_str(&format!("{unreadable} lines did not read and are not counted\n"));
-    }
-    out
 }
 
 use crate::codes::LiaiseCode as _;
@@ -266,9 +301,13 @@ mod tests {
         let records = [r("a", 900, 1, Outcome::Passed), r("a", 100, 2, Outcome::Passed), r("b", 1_500, 1, Outcome::Over), r("c", 300, 1, Outcome::Passed)];
         let order: Vec<(&str, u64)> = slowest(&records).iter().map(|r| (r.test.as_str(), r.ms)).collect();
         assert_eq!(order, [("b", 1_500), ("c", 300), ("a", 100)]);
-        let text = render_report(&records, 1, 2);
+        let report = TimingReport::of(Path::new("x"), &records, 1);
+        assert_eq!((report.over, report.unreadable, report.tests.len()), (1, 1, 3));
+        let back: TimingReport = serde_json::from_str(&serde_json::to_string(&report).unwrap()).unwrap();
+        assert_eq!(back, report, "the report is data with a fixed shape");
+        let text = report.render(2);
         assert!(text.starts_with("slowest tests, the latest run of each: 2 shown of 3\n"), "{text}");
-        assert!(text.contains("1s500ms          1s    150%  OVER      b  (f.rs:1)"), "{text}");
+        assert!(text.contains("1s500ms                1s    150%  OVER      b  (f.rs:1)"), "{text}");
         assert!(!text.contains("  a  "), "{text}");
         assert!(text.contains("1 over threshold [MAINT2050]\n1 lines did not read and are not counted\n"), "{text}");
     }

@@ -1,0 +1,5 @@
+error: [MAINT0001] the attribute does not read: unknown attribute key `maks`; did you mean `max`? known keys: class, max
+ --> tests/ui/fail/attr_unknown_key.rs:3:14
+  |
+3 | #[timed_test(maks = "2s")]
+  |              ^^^^

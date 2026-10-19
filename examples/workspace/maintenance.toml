@@ -16,3 +16,8 @@ max_rise = 0
 [[sensitivity.allow]]
 from = "api::login"
 to = "vault::check_password"
+
+# where environment keys are declared: every file the glob matches, and the table (or list) of keys inside it
+[[env.declared_in]]
+glob = "deploy/*.toml"
+path = "env"

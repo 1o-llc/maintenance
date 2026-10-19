@@ -1,0 +1,5 @@
+error: [MAINT1002] unknown sensitivity level: `top_secret`; the levels are public, internal, confidential, secret, key_material
+ --> tests/ui/fail/sensitivity_unknown_level.rs:3:15
+  |
+3 | #[sensitivity(top_secret)]
+  |               ^^^^^^^^^^

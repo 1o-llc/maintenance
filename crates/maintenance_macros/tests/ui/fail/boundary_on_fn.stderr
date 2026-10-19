@@ -1,0 +1,5 @@
+error: [MAINT0002] this attribute does not go on this kind of item: #[boundary] goes on an inline mod; inside a module or a crate root, write boundary_here!(allowed = [...]);
+ --> tests/ui/fail/boundary_on_fn.rs:4:1
+  |
+4 | pub fn open() {}
+  | ^^^^^^^^^^^^^^^^

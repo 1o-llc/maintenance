@@ -128,3 +128,78 @@ fn item_attrs(item: &mut syn::Item) -> Option<&mut Vec<syn::Attribute>> {
         _ => None,
     }
 }
+
+pub(crate) fn mechanism(args: TokenStream, item: TokenStream) -> TokenStream {
+    let mut errs = SynBuffer::new();
+    let read = attrs::read_mechanism(&as_attribute(attrs::MECHANISM, args), &mut errs);
+    simple_mark(item, attrs::MECHANISM, errs, read.map(|name| quote!(::maintenance_core::registry::Marked::Mechanism { name: #name })))
+}
+
+fn boundary_what(allowed: &[String]) -> TokenStream {
+    quote!(::maintenance_core::registry::Marked::Boundary { allowed: &[#(#allowed),*] })
+}
+
+pub(crate) fn boundary(args: TokenStream, item: TokenStream) -> TokenStream {
+    let mut errs = SynBuffer::new();
+    let read = attrs::read_boundary(&as_attribute(attrs::BOUNDARY, args), &mut errs);
+    if let Ok(syn::Item::Mod(_)) = syn::parse2::<syn::Item>(item.clone()) {
+    } else {
+        errs.push_spanned_ctx(&item, Code::WrongItem, "#[boundary] goes on an inline mod; inside a module or a crate root, write boundary_here!(allowed = [...]);");
+        return refused(item, errs);
+    }
+    simple_mark(item, attrs::BOUNDARY, errs, read.map(|allowed| boundary_what(&allowed)))
+}
+
+pub(crate) fn boundary_here(input: TokenStream) -> TokenStream {
+    let mut errs = SynBuffer::new();
+    let at = input.clone();
+    let Some(allowed) = attrs::read_boundary(&as_attribute(attrs::BOUNDARY, input), &mut errs) else {
+        return errs.into_compile_error();
+    };
+    let what = boundary_what(&allowed);
+    let line = quote_spanned!(syn::spanned::Spanned::span(&at)=> ::core::line!());
+    quote! {
+        ::maintenance_core::__private::inventory::submit! {
+            ::maintenance_core::registry::Mark { module: ::core::module_path!(), name: "", kind: "mod", file: ::core::file!(), line: #line, what: #what }
+        }
+    }
+}
+
+pub(crate) fn supersedes(args: TokenStream, item: TokenStream) -> TokenStream {
+    let mut errs = SynBuffer::new();
+    let read = attrs::read_supersedes(&as_attribute(attrs::SUPERSEDES, args), &mut errs);
+    simple_mark(item, attrs::SUPERSEDES, errs, read.map(|old| {
+        let old = attrs::path_text(&old);
+        quote!(::maintenance_core::registry::Marked::Supersedes { old: #old })
+    }))
+}
+
+pub(crate) fn reads_env(args: TokenStream, item: TokenStream) -> TokenStream {
+    let mut errs = SynBuffer::new();
+    let read = attrs::read_reads_env(&as_attribute(attrs::READS_ENV, args), &mut errs);
+    simple_mark(item, attrs::READS_ENV, errs, read.map(|keys| quote!(::maintenance_core::registry::Marked::ReadsEnv { keys: &[#(#keys),*] })))
+}
+
+pub(crate) fn golden(args: TokenStream, item: TokenStream) -> TokenStream {
+    let mut errs = SynBuffer::new();
+    let read = attrs::read_golden(&as_attribute(attrs::GOLDEN, args), &mut errs);
+    let Some(target) = target(item.clone(), attrs::GOLDEN, &mut errs) else {
+        return refused(item, errs);
+    };
+    refuse_repeat(&target.item, attrs::GOLDEN, &mut errs);
+    match read {
+        Some(writer) if errs.is_empty() => {
+            let text = attrs::path_text(&writer);
+            let submit = mark(&target, quote!(::maintenance_core::registry::Marked::Golden { writer: #text }));
+            // the writer is named as code, so a writer that does not exist is the compiler's error, on the path
+            with_extra(target, quote!(#[allow(unused_imports)] use #writer as _; #submit))
+        }
+        _ => refused(item, errs),
+    }
+}
+
+pub(crate) fn wire_writer(args: TokenStream, item: TokenStream) -> TokenStream {
+    let mut errs = SynBuffer::new();
+    let read = attrs::read_wire_writer(&as_attribute(attrs::WIRE_WRITER, args), &mut errs);
+    simple_mark(item, attrs::WIRE_WRITER, errs, read.map(|()| quote!(::maintenance_core::registry::Marked::WireWriter)))
+}

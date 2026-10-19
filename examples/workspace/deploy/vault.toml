@@ -1,0 +1,3 @@
+# the vault service's deployment: the environment it is given
+[env]
+VAULT_PATH = "/srv/vault"

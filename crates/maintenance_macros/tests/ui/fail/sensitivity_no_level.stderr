@@ -1,0 +1,7 @@
+error: [MAINT1001] #[sensitivity(level)] names one level: #[sensitivity(secret)]
+ --> tests/ui/fail/sensitivity_no_level.rs:3:1
+  |
+3 | #[sensitivity]
+  | ^^^^^^^^^^^^^^
+  |
+  = note: this error originates in the attribute macro `sensitivity` (in Nightly builds, run with -Z macro-backtrace for more info)

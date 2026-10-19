@@ -91,7 +91,7 @@ pub(crate) fn timed_test(args: TokenStream, item: TokenStream) -> TokenStream {
         #(#attrs)*
         #vis #sig {
             #track
-            static __MAINTENANCE_TEST: ::maintenance_core::timing::TestMeta = ::maintenance_core::timing::TestMeta {
+            static __MAINTENANCE_TEST: ::maintenance_core::timed::TestMeta = ::maintenance_core::timed::TestMeta {
                 module: ::core::module_path!(),
                 name: #name,
                 file: ::core::file!(),
@@ -102,7 +102,7 @@ pub(crate) fn timed_test(args: TokenStream, item: TokenStream) -> TokenStream {
                 root: #root,
             };
             #asyncness fn __maintenance_timed() #output #block
-            let __maintenance_clock = ::maintenance_core::timing::start(&__MAINTENANCE_TEST);
+            let __maintenance_clock = ::maintenance_core::timed::start(&__MAINTENANCE_TEST);
             let __maintenance_out = #call;
             __maintenance_clock.finish();
             __maintenance_out

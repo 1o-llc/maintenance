@@ -1,0 +1,5 @@
+error: [MAINT3001] a date is written YYYY-MM-DD: `2026-02-30` is not a day of the calendar
+ --> tests/ui/fail/deprecated_after_bad_date.rs:3:20
+  |
+3 | #[deprecated_after("2026-02-30", reason = "use v2")]
+  |                    ^^^^^^^^^^^^

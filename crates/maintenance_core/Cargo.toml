@@ -6,7 +6,7 @@ rust-version.workspace = true
 license.workspace = true
 authors.workspace = true
 repository.workspace = true
-description = "The runtime half of maintenance_macros: the code table, sensitivity levels as a big-bad-bool word, test thresholds, the timing report, the registry file, and the sensitivity checker."
+description = "The runtime half of maintenance_macros: the code table, sensitivity levels as a big-bad-bool word, test thresholds, the timing report, the registry file, and the workspace checks."
 readme = "../../README.md"
 keywords = ["maintenance", "testing", "sensitivity", "registry", "proc-macro"]
 categories = ["development-tools", "development-tools::testing"]
@@ -16,8 +16,8 @@ include = ["src/**", "Cargo.toml", "LICENSE-MIT", "LICENSE-APACHE"]
 default = []
 # the attribute readers the macros and the checker share (simple_impl_attr_kit, syn with full items)
 attrs = ["dep:simple_impl_attr_kit", "syn/full", "syn/extra-traits", "syn/visit"]
-# the checker and the two command-line tools: sensitivity, timed_test
-check = ["attrs", "dep:klepto", "proc-macro2/span-locations"]
+# the workspace checks, read through klepto (no command line: a tool calls check::*)
+check = ["attrs", "dep:klepto", "dep:globset", "dep:walkdir", "proc-macro2/span-locations"]
 
 [dependencies]
 liaise_proc_macro = { workspace = true }
@@ -31,13 +31,9 @@ toml = { workspace = true }
 inventory = { workspace = true }
 simple_impl_attr_kit = { workspace = true, optional = true }
 klepto = { workspace = true, optional = true }
+globset = { version = "0.4", optional = true }
+walkdir = { version = "2", optional = true }
 
-[[bin]]
-name = "sensitivity"
-path = "src/bin/sensitivity.rs"
-required-features = ["check"]
-
-[[bin]]
-name = "timed_test"
-path = "src/bin/timed_test.rs"
+[[example]]
+name = "check"
 required-features = ["check"]

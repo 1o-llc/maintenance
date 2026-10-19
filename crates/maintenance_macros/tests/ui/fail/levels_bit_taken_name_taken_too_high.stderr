@@ -1,0 +1,17 @@
+error: [MAINT1011] two levels are declared at one bit: `internal` and `public` are both at bit 0
+ --> tests/ui/fail/levels_bit_taken_name_taken_too_high.rs:2:41
+  |
+2 |     pub Levels { public = 0, internal = 0, public = 2, cosmic = 40 }
+  |                                         ^
+
+error: [MAINT1012] a level is declared twice: `public`
+ --> tests/ui/fail/levels_bit_taken_name_taken_too_high.rs:2:44
+  |
+2 |     pub Levels { public = 0, internal = 0, public = 2, cosmic = 40 }
+  |                                            ^^^^^^
+
+error: [MAINT1013] a level's bit is its rank in a u32 word: 0 to 31: `cosmic` is at bit 40
+ --> tests/ui/fail/levels_bit_taken_name_taken_too_high.rs:2:65
+  |
+2 |     pub Levels { public = 0, internal = 0, public = 2, cosmic = 40 }
+  |                                                                 ^^

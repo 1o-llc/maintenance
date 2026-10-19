@@ -1,6 +1,6 @@
 //! The public face: what the outside world calls.
 
-use maintenance_macros::{owner, sensitivity};
+use maintenance_macros::{mechanism, owner, sensitivity};
 
 /// Health check: unmarked, so it counts as `public`.
 pub fn health() -> bool {
@@ -31,6 +31,23 @@ pub fn admin_report() -> usize {
 #[sensitivity(internal)]
 pub fn rotate() -> u64 {
     vault::root_seed()
+}
+
+/// The old way in, still called from here.
+#[allow(deprecated)]
+pub fn old_path() -> u8 {
+    vault::legacy_open().unseal()
+}
+
+/// The api's own retry wait: a second home for a rule the vault already holds.
+#[mechanism("retry policy")]
+pub fn retry_delay(attempt: u32) -> u64 {
+    100 * u64::from(attempt)
+}
+
+/// Reaches into the vault's sealed module.
+pub fn peek() -> u8 {
+    vault::sealed::inner()
 }
 
 #[cfg(test)]

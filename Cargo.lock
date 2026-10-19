@@ -314,6 +314,7 @@ name = "maintenance_core"
 version = "0.1.0"
 dependencies = [
  "big-bad-bool",
+ "globset",
  "inventory",
  "klepto",
  "liaise_proc_macro",
@@ -324,6 +325,7 @@ dependencies = [
  "simple_impl_attr_kit",
  "syn 2.0.119",
  "toml 0.8.23",
+ "walkdir",
 ]
 
 [[package]]

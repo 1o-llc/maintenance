@@ -1,0 +1,7 @@
+error: [MAINT8031] #[reads_env] names the keys read here as strings: #[reads_env("DATABASE_URL")]
+ --> tests/ui/fail/reads_env_no_key.rs:3:1
+  |
+3 | #[reads_env(DATABASE_URL)]
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: this error originates in the attribute macro `reads_env` (in Nightly builds, run with -Z macro-backtrace for more info)

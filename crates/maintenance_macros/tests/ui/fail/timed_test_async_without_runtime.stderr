@@ -1,0 +1,5 @@
+error: [MAINT2006] an async test needs its runtime's test attribute below #[timed_test]: #[tokio::test]
+ --> tests/ui/fail/timed_test_async_without_runtime.rs:4:1
+  |
+4 | async fn slow() {}
+  | ^^^^^

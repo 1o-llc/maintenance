@@ -1,0 +1,5 @@
+error: [MAINT8021] #[supersedes] names the item it replaces as a path: #[supersedes("crate::old::thing")]: `the old one` is not a path
+ --> tests/ui/fail/supersedes_not_a_path.rs:3:14
+  |
+3 | #[supersedes("the old one")]
+  |              ^^^^^^^^^^^^^

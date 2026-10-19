@@ -1,0 +1,5 @@
+error: [MAINT2003] unknown test class: `nightly`; the classes are integration 10s, slow 1m, unit 500ms
+ --> tests/ui/fail/timed_test_unknown_class.rs:3:14
+  |
+3 | #[timed_test(class = "nightly")]
+  |              ^^^^^

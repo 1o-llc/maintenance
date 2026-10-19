@@ -1,0 +1,5 @@
+error[E0080]: evaluation panicked: [MAINT1002] unknown sensitivity level: `crown_jewel` is not a flag of `crate::TradeLevels`
+ --> tests/ui/fail/sensitivity_unknown_level_of_a_word.rs:7:15
+  |
+7 | #[sensitivity(crown_jewel, levels = crate::TradeLevels)]
+  |               ^^^^^^^^^^^ evaluation of `open::_` failed here

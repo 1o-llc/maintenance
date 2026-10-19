@@ -1,0 +1,5 @@
+error: [MAINT3002] this item's deprecation date has passed; remove it, or move the date with a reason: deprecated after 2020-01-01 (use v2), today is 2026-10-19
+ --> tests/ui/fail/deprecated_after_date_passed.rs:3:20
+  |
+3 | #[deprecated_after("2020-01-01", reason = "use v2")]
+  |                    ^^^^^^^^^^^^

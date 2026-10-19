@@ -202,7 +202,7 @@ mod tests {
 
     #[test]
     fn every_problem_in_a_declaration_is_reported_coded() {
-        let all = |t| parse_declaration(t).unwrap_err().into_iter().map(|e| e.to_string()).collect::<Vec<_>>();
+        let all = |t| parse_declaration(t).err().unwrap().into_iter().map(|e| e.to_string()).collect::<Vec<_>>();
         assert_eq!(
             all(quote!(L { a = 0, b = 0, a = 1, c = 40 })),
             [

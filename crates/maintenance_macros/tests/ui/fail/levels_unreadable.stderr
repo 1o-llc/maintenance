@@ -1,0 +1,5 @@
+error: [MAINT1014] sensitivity_levels! reads `pub Name { level = bit, ... }`: expected `=`
+ --> tests/ui/fail/levels_unreadable.rs:2:24
+  |
+2 |     pub Levels { public: 0 }
+  |                        ^

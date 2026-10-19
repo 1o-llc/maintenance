@@ -19,6 +19,15 @@ pub const OWNER: &str = "owner";
 pub const REQUIRES_REVIEW: &str = "requires_review";
 pub const DEPRECATED_AFTER: &str = "deprecated_after";
 pub const TIMED_TEST: &str = "timed_test";
+pub const MECHANISM: &str = "mechanism";
+pub const BOUNDARY: &str = "boundary";
+pub const SUPERSEDES: &str = "supersedes";
+pub const READS_ENV: &str = "reads_env";
+pub const GOLDEN: &str = "golden";
+pub const WIRE_WRITER: &str = "wire_writer";
+
+/// Every mark an item can carry, by name: what [`read_marks`] looks for.
+pub const MARKS: &[&str] = &[SENSITIVITY, OWNER, REQUIRES_REVIEW, DEPRECATED_AFTER, MECHANISM, BOUNDARY, SUPERSEDES, READS_ENV, GOLDEN, WIRE_WRITER];
 
 /// The schema each keyed attribute validates against, and the line that documents each key.
 pub mod vocabulary {
@@ -50,6 +59,20 @@ pub mod vocabulary {
     /// The keys after `#[deprecated_after("YYYY-MM-DD", ...)]`'s date.
     pub fn deprecated_after() -> AttrSchema {
         AttrSchema::new().optional("reason", K::String).doc("reason", "why it goes, and what to use instead")
+    }
+
+    /// `#[boundary(allowed = ["api", "cli"])]` and `boundary_here!(allowed = [...])`.
+    pub fn boundary() -> AttrSchema {
+        AttrSchema::new()
+            .optional("allowed", K::List)
+            .doc("allowed", "the crates, besides its own, that may use what is inside: allowed = [\"api\", \"cli\"], or allowed = [] for none")
+    }
+
+    /// `#[golden(writer = path::to::writer)]`.
+    pub fn golden() -> AttrSchema {
+        AttrSchema::new()
+            .optional("writer", K::Any)
+            .doc("writer", "the #[wire_writer] fn whose bytes this test pins, written as a path (writer = vault::wire::encode) or as a string")
     }
 }
 
@@ -180,21 +203,7 @@ pub fn read_requires_review(attr: &syn::Attribute, errs: &mut SynBuffer) -> Opti
 
 /// Read `#[owner("team")]`: the owner.
 pub fn read_owner(attr: &syn::Attribute, errs: &mut SynBuffer) -> Option<String> {
-    let owner = match &attr.meta {
-        syn::Meta::List(list) => syn::parse2::<syn::LitStr>(list.tokens.clone()).ok(),
-        _ => None,
-    };
-    match owner {
-        Some(lit) if !lit.value().trim().is_empty() => Some(lit.value().trim().to_owned()),
-        Some(lit) => {
-            errs.push_spanned(&lit, Code::OwnerMissing);
-            None
-        }
-        None => {
-            errs.push_spanned(attr, Code::OwnerMissing);
-            None
-        }
-    }
+    one_string(attr, Code::OwnerMissing, errs)
 }
 
 /// Read `#[deprecated_after("YYYY-MM-DD", reason = "...")]`.
@@ -230,6 +239,114 @@ pub fn read_deprecated_after(attr: &syn::Attribute, errs: &mut SynBuffer) -> Opt
     Some(DeprecatedAfterAttr { date: date.value(), days: days?, date_span: date.span(), reason: reason? })
 }
 
+/// The one string an attribute names: `#[mechanism("retry policy")]`, `#[owner("platform")]`.
+fn one_string(attr: &syn::Attribute, code: Code, errs: &mut SynBuffer) -> Option<String> {
+    let lit = match &attr.meta {
+        syn::Meta::List(list) => syn::parse2::<syn::LitStr>(list.tokens.clone()).ok(),
+        _ => None,
+    };
+    match lit {
+        Some(lit) if !lit.value().trim().is_empty() => Some(lit.value().trim().to_owned()),
+        Some(lit) => {
+            errs.push_spanned(&lit, code);
+            None
+        }
+        None => {
+            errs.push_spanned(attr, code);
+            None
+        }
+    }
+}
+
+/// A path written as code (`a::b`) or as a string (`"a::b"`), as one `syn::Path`, spaces gone when shown.
+fn path_written(tokens: &TokenStream, code: Code, errs: &mut SynBuffer) -> Option<syn::Path> {
+    let read = match syn::parse2::<syn::LitStr>(tokens.clone()) {
+        Ok(lit) => lit.parse::<syn::Path>().map_err(|_| err_spanned_ctx(&lit, code, format!("`{}` is not a path", lit.value()))),
+        Err(_) => syn::parse2::<syn::Path>(tokens.clone()).map_err(|_| err_spanned(tokens, code)),
+    };
+    errs.absorb(read)
+}
+
+/// A path as one string: `crate::old::thing`.
+pub fn path_text(path: &syn::Path) -> String {
+    quote::quote!(#path).to_string().replace(' ', "")
+}
+
+/// Read `#[mechanism("name")]`.
+pub fn read_mechanism(attr: &syn::Attribute, errs: &mut SynBuffer) -> Option<String> {
+    one_string(attr, Code::MechanismName, errs)
+}
+
+/// Read `#[boundary(allowed = [...])]` (or `boundary_here!`'s body as that attribute): the crates allowed.
+pub fn read_boundary(attr: &syn::Attribute, errs: &mut SynBuffer) -> Option<Vec<String>> {
+    let bag = keyed(attr, BOUNDARY, vocabulary::boundary(), errs)?;
+    if !bag.contains_key("allowed") {
+        errs.push_spanned(attr, Code::BoundaryAllowed);
+        return None;
+    }
+    let span = bag.span_of("allowed").unwrap_or_else(|| attr.span());
+    let listed = bag.optional_list("allowed").ok().flatten().unwrap_or_default();
+    let names: Option<Vec<String>> = listed.iter().map(|v| v.as_str().map(str::trim).filter(|s| !s.is_empty()).map(str::to_owned)).collect();
+    match names {
+        Some(names) => Some(names),
+        None => {
+            errs.push_at_ctx(span, Code::BoundaryAllowed, "each allowed crate is a string");
+            None
+        }
+    }
+}
+
+/// Read `#[supersedes("path::to::old")]` / `#[supersedes(path::to::old)]`: the path as written.
+pub fn read_supersedes(attr: &syn::Attribute, errs: &mut SynBuffer) -> Option<syn::Path> {
+    match &attr.meta {
+        syn::Meta::List(list) if !list.tokens.is_empty() => path_written(&list.tokens, Code::SupersedesPath, errs),
+        _ => {
+            errs.push_spanned(attr, Code::SupersedesPath);
+            None
+        }
+    }
+}
+
+/// Read `#[reads_env("KEY", "OTHER")]`: the keys.
+pub fn read_reads_env(attr: &syn::Attribute, errs: &mut SynBuffer) -> Option<Vec<String>> {
+    let keys = match &attr.meta {
+        syn::Meta::List(list) => syn::parse::Parser::parse2(syn::punctuated::Punctuated::<syn::LitStr, syn::Token![,]>::parse_terminated, list.tokens.clone()).ok(),
+        _ => None,
+    };
+    match keys {
+        Some(keys) if !keys.is_empty() && keys.iter().all(|k| !k.value().trim().is_empty()) => Some(keys.iter().map(|k| k.value().trim().to_owned()).collect()),
+        _ => {
+            errs.push_spanned(attr, Code::ReadsEnvKey);
+            None
+        }
+    }
+}
+
+/// Read `#[golden(writer = path)]`: the writer's path as written.
+pub fn read_golden(attr: &syn::Attribute, errs: &mut SynBuffer) -> Option<syn::Path> {
+    let bag = keyed(attr, GOLDEN, vocabulary::golden(), errs)?;
+    let span = bag.span_of("writer").unwrap_or_else(|| attr.span());
+    match (bag.get("writer"), bag.written_tokens("writer")) {
+        (Some(_), Some(tokens)) => path_written(tokens, Code::GoldenWriter, errs),
+        _ => {
+            errs.push_at(span, Code::GoldenWriter);
+            None
+        }
+    }
+}
+
+/// Read `#[wire_writer]`: it takes nothing.
+pub fn read_wire_writer(attr: &syn::Attribute, errs: &mut SynBuffer) -> Option<()> {
+    match &attr.meta {
+        syn::Meta::Path(_) => Some(()),
+        syn::Meta::List(list) if list.tokens.is_empty() => Some(()),
+        other => {
+            errs.push_spanned(other, Code::WireWriterArgs);
+            None
+        }
+    }
+}
+
 /// Every mark one item carries, read from its attributes; each attribute that does not read is in `errs`.
 #[derive(Debug, Clone, Default)]
 pub struct Marks {
@@ -237,11 +354,26 @@ pub struct Marks {
     pub owner: Option<String>,
     pub review: Option<String>,
     pub deprecated_after: Option<DeprecatedAfterAttr>,
+    pub mechanism: Option<String>,
+    pub boundary: Option<Vec<String>>,
+    pub supersedes: Option<syn::Path>,
+    pub reads_env: Vec<String>,
+    pub golden: Option<syn::Path>,
+    pub wire_writer: bool,
 }
 
 impl Marks {
     pub fn is_empty(&self) -> bool {
-        self.sensitivity.is_none() && self.owner.is_none() && self.review.is_none() && self.deprecated_after.is_none()
+        self.sensitivity.is_none()
+            && self.owner.is_none()
+            && self.review.is_none()
+            && self.deprecated_after.is_none()
+            && self.mechanism.is_none()
+            && self.boundary.is_none()
+            && self.supersedes.is_none()
+            && self.reads_env.is_empty()
+            && self.golden.is_none()
+            && !self.wire_writer
     }
 }
 
@@ -250,7 +382,7 @@ pub fn read_marks(attrs: &[syn::Attribute], errs: &mut SynBuffer) -> Marks {
     let mut marks = Marks::default();
     let mut seen: Vec<&str> = Vec::new();
     for attr in attrs {
-        let Some(name) = [SENSITIVITY, OWNER, REQUIRES_REVIEW, DEPRECATED_AFTER].into_iter().find(|n| is_named(attr, n)) else {
+        let Some(name) = MARKS.iter().copied().find(|n| is_named(attr, n)) else {
             continue;
         };
         if seen.contains(&name) {
@@ -262,7 +394,13 @@ pub fn read_marks(attrs: &[syn::Attribute], errs: &mut SynBuffer) -> Marks {
             SENSITIVITY => marks.sensitivity = read_sensitivity(attr, errs),
             OWNER => marks.owner = read_owner(attr, errs),
             REQUIRES_REVIEW => marks.review = read_requires_review(attr, errs),
-            _ => marks.deprecated_after = read_deprecated_after(attr, errs),
+            DEPRECATED_AFTER => marks.deprecated_after = read_deprecated_after(attr, errs),
+            MECHANISM => marks.mechanism = read_mechanism(attr, errs),
+            BOUNDARY => marks.boundary = read_boundary(attr, errs),
+            SUPERSEDES => marks.supersedes = read_supersedes(attr, errs),
+            READS_ENV => marks.reads_env = read_reads_env(attr, errs).unwrap_or_default(),
+            GOLDEN => marks.golden = read_golden(attr, errs),
+            _ => marks.wire_writer = read_wire_writer(attr, errs).is_some(),
         }
     }
     marks
@@ -333,8 +471,44 @@ mod tests {
     }
 
     #[test]
+    fn the_workspace_marks_read() {
+        let mut errs = SynBuffer::new();
+        let m = read_marks(
+            &attrs(
+                "#[mechanism(\"retry policy\")] #[boundary(allowed = [\"api\", \"cli\"])] #[supersedes(\"crate::old\")] \
+                 #[reads_env(\"A\", \"B\")] #[golden(writer = vault::wire::encode)] #[wire_writer]",
+            ),
+            &mut errs,
+        );
+        assert!(errs.is_empty());
+        assert_eq!(m.mechanism.as_deref(), Some("retry policy"));
+        assert_eq!(m.boundary.unwrap(), ["api", "cli"]);
+        assert_eq!(path_text(&m.supersedes.unwrap()), "crate::old");
+        assert_eq!(m.reads_env, ["A", "B"]);
+        assert_eq!(path_text(&m.golden.unwrap()), "vault::wire::encode");
+        assert!(m.wire_writer);
+        let both = read_marks(&attrs("#[supersedes(crate::old)] #[golden(writer = \"a::b\")] #[boundary(allowed = [])]"), &mut errs);
+        assert!(errs.is_empty());
+        assert_eq!(path_text(&both.supersedes.unwrap()), "crate::old");
+        assert_eq!(path_text(&both.golden.unwrap()), "a::b");
+        assert_eq!(both.boundary.unwrap(), Vec::<String>::new());
+    }
+
+    #[test]
+    fn the_workspace_marks_refuse_coded() {
+        assert_eq!(refusals("#[mechanism]"), ["[MAINT8001] #[mechanism] names its rule as a string: #[mechanism(\"retry policy\")]"]);
+        assert_eq!(refusals("#[boundary]"), ["[MAINT8011] a boundary lists the crates that may use it: #[boundary(allowed = [\"api\"])]"]);
+        assert_eq!(refusals("#[boundary(allowed = [api])]"), ["[MAINT8011] a boundary lists the crates that may use it: #[boundary(allowed = [\"api\"])]: each allowed crate is a string"]);
+        assert_eq!(refusals("#[supersedes(\"not a path\")]"), ["[MAINT8021] #[supersedes] names the item it replaces as a path: #[supersedes(\"crate::old::thing\")]: `not a path` is not a path"]);
+        assert_eq!(refusals("#[reads_env()]"), ["[MAINT8031] #[reads_env] names the keys read here as strings: #[reads_env(\"DATABASE_URL\")]"]);
+        assert_eq!(refusals("#[golden(writer = 1 + 1)]"), ["[MAINT8041] #[golden] names the writer it pins: #[golden(writer = path::to::writer)]"]);
+        assert_eq!(refusals("#[golden]"), ["[MAINT8041] #[golden] names the writer it pins: #[golden(writer = path::to::writer)]"]);
+        assert_eq!(refusals("#[wire_writer(fast)]"), ["[MAINT8051] #[wire_writer] takes nothing: #[wire_writer]"]);
+    }
+
+    #[test]
     fn every_key_is_documented() {
-        for schema in [vocabulary::sensitivity(), vocabulary::timed_test(), vocabulary::requires_review(), vocabulary::deprecated_after()] {
+        for schema in [vocabulary::sensitivity(), vocabulary::timed_test(), vocabulary::requires_review(), vocabulary::deprecated_after(), vocabulary::boundary(), vocabulary::golden()] {
             let text = schema.describe();
             for key in schema.keys() {
                 let line = text.lines().find(|l| l.starts_with(&format!("{key}: "))).unwrap();

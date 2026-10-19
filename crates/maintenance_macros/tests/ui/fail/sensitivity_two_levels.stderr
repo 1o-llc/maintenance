@@ -1,0 +1,5 @@
+error: [MAINT1003] #[sensitivity] names one level; an item has one: public, secret
+ --> tests/ui/fail/sensitivity_two_levels.rs:3:23
+  |
+3 | #[sensitivity(public, secret)]
+  |                       ^^^^^^

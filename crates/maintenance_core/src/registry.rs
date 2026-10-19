@@ -37,7 +37,7 @@
 //! relative to the workspace root, `line` is the line the item starts on (its first attribute or doc line, as klepto
 //! records it). `sensitivity` and `owner` are the item's own or the nearest enclosing `mod` / `impl`'s, and `*_from`
 //! names the item they are written on; every other field is the item's own. `boundary` is the crates allowed to use
-//! what is inside a module or crate (`#[boundary]` / `boundary!`), `supersedes` the canonical id of the item this one
+//! what is inside a module or crate (`#[boundary]` / `boundary_here!`), `supersedes` the canonical id of the item this one
 //! replaces, `reads_env` the environment keys read here, `golden_writer` the writer a golden test pins, `wire_writer`
 //! whether the item is a `#[wire_writer]`. A field with nothing to say is `null`, except `reads_env` (`[]`)
 //! and `wire_writer` (`false`). Every field is always written. Items are sorted by `id`.
@@ -186,7 +186,7 @@ pub fn write(workspace_root: &Path, registry: &Registry) -> Result<PathBuf, Regi
 pub struct Mark {
     /// `module_path!()` where the item is.
     pub module: &'static str,
-    /// The item's name; for an impl block, its self type as written; empty for the module `boundary!` is in.
+    /// The item's name; for an impl block, its self type as written; empty for the module `boundary_here!` is in.
     pub name: &'static str,
     pub kind: &'static str,
     pub file: &'static str,
@@ -203,7 +203,7 @@ pub enum Marked {
     Review { reason: &'static str },
     DeprecatedAfter { date: &'static str, reason: &'static str },
     Mechanism { name: &'static str },
-    /// On a module: `name` is the module's, or empty for the module `boundary!` is written in.
+    /// On a module: `name` is the module's, or empty for the module `boundary_here!` is written in.
     Boundary { allowed: &'static [&'static str] },
     Supersedes { old: &'static str },
     ReadsEnv { keys: &'static [&'static str] },

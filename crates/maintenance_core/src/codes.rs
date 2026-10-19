@@ -45,7 +45,7 @@ liaise_proc_macro::liaise_codes! {
         // 5xxx: #[requires_review]
         ReviewReasonMissing = 5001 => "#[requires_review] says why: #[requires_review(reason = \"...\")]",
 
-        // 8xxx: #[mechanism], #[boundary] / boundary!, #[supersedes], #[reads_env], #[golden], #[wire_writer]
+        // 8xxx: #[mechanism], #[boundary] / boundary_here!, #[supersedes], #[reads_env], #[golden], #[wire_writer]
         MechanismName = 8001 => "#[mechanism] names its rule as a string: #[mechanism(\"retry policy\")]",
         BoundaryAllowed = 8011 => "a boundary lists the crates that may use it: #[boundary(allowed = [\"api\"])]",
         SupersedesPath = 8021 => "#[supersedes] names the item it replaces as a path: #[supersedes(\"crate::old::thing\")]",
@@ -54,7 +54,7 @@ liaise_proc_macro::liaise_codes! {
         WireWriterArgs = 8051 => "#[wire_writer] takes nothing: #[wire_writer]",
 
         // 6xxx: the checker (maintenance check)
-        CallRises = 6001 => "a call from a lower sensitivity level into a higher one",
+        CallRises = 6001 => "a lower sensitivity level reaches into a higher one",
         LevelNotInTable = 6002 => "an item names a level the workspace's level table does not have",
         TwoLevelTables = 6003 => "the workspace declares two different level tables; it has one",
         CheckConfig = 6004 => "maintenance.toml does not read",

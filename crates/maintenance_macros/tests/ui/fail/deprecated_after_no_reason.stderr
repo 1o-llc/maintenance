@@ -1,0 +1,5 @@
+error: [MAINT3003] #[deprecated_after] says why: #[deprecated_after("2026-12-01", reason = "...")]
+ --> tests/ui/fail/deprecated_after_no_reason.rs:3:20
+  |
+3 | #[deprecated_after("2999-01-01")]
+  |                    ^^^^^^^^^^^^

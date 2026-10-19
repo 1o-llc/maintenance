@@ -1,0 +1,7 @@
+error: [MAINT8001] #[mechanism] names its rule as a string: #[mechanism("retry policy")]
+ --> tests/ui/fail/mechanism_no_name.rs:3:1
+  |
+3 | #[mechanism(retry)]
+  | ^^^^^^^^^^^^^^^^^^^
+  |
+  = note: this error originates in the attribute macro `mechanism` (in Nightly builds, run with -Z macro-backtrace for more info)

@@ -13,6 +13,10 @@
 //! [[sensitivity.allow]]     # a reach the workspace has looked at and accepts
 //! from = "api::login"
 //! to = "vault::check_password"
+//!
+//! [[env.declared_in]]       # where environment keys are declared, for #[reads_env]
+//! glob = "deploy/*.toml"    # files, relative to this file's folder
+//! path = "env"              # the dotted path inside each: a table whose keys are the keys, or a list of them
 //! ```
 //!
 //! The file is the nearest `maintenance.toml` at or above the crate's folder ([`find`]); its folder is the root the
@@ -39,6 +43,24 @@ pub struct MaintenanceToml {
     pub timed_test: TimedTestToml,
     #[serde(default)]
     pub sensitivity: SensitivityToml,
+    #[serde(default)]
+    pub env: EnvToml,
+}
+
+/// `[env]`.
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct EnvToml {
+    #[serde(default)]
+    pub declared_in: Vec<DeclaredIn>,
+}
+
+/// One place keys are declared: the files `glob` matches, and the dotted `path` inside them.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct DeclaredIn {
+    pub glob: String,
+    pub path: String,
 }
 
 /// `[timed_test]`.
@@ -210,5 +232,7 @@ mod tests {
         assert_eq!(file.sensitivity.unmarked.as_deref(), Some("internal"));
         assert_eq!(file.sensitivity.max_rise, Some(1));
         assert_eq!(file.sensitivity.allow, [Allow { from: "a::f".into(), to: "b::g".into() }]);
+        let file = parse("[[env.declared_in]]\nglob = \"deploy/*.toml\"\npath = \"service.env\"\n").unwrap();
+        assert_eq!(file.env.declared_in, [DeclaredIn { glob: "deploy/*.toml".into(), path: "service.env".into() }]);
     }
 }

@@ -1,0 +1,7 @@
+error: [MAINT2004] no threshold: write max = "2s" or class = "unit", or a default class in maintenance.toml: the classes are integration 10s, slow 1m, unit 500ms
+ --> tests/ui/fail/timed_test_no_threshold.rs:4:1
+  |
+4 | #[timed_test]
+  | ^^^^^^^^^^^^^
+  |
+  = note: this error originates in the attribute macro `timed_test` (in Nightly builds, run with -Z macro-backtrace for more info)

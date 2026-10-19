@@ -1,6 +1,12 @@
 //! The vault: the workspace's most sensitive code, marked.
 
-use maintenance_macros::{deprecated_after, owner, requires_review, sensitivity, sensitivity_levels};
+use maintenance_macros::{
+    boundary, boundary_here, deprecated_after, mechanism, owner, reads_env, requires_review, sensitivity, sensitivity_levels, supersedes,
+    wire_writer,
+};
+
+// only the api crate may use the vault
+boundary_here!(allowed = ["api"]);
 
 // the workspace's level word: the shipped five, and one above them
 sensitivity_levels! {
@@ -33,6 +39,8 @@ impl MasterKey {
 /// Open the vault for one session.
 #[sensitivity(secret)]
 #[requires_review(reason = "opens the key store")]
+#[mechanism("vault opening")]
+#[supersedes("crate::legacy_open")]
 pub fn open_vault() -> Vault {
     Vault { key: MasterKey::load() }
 }
@@ -85,4 +93,55 @@ pub mod store {
     pub fn records() -> usize {
         crate::audit_log().len()
     }
+}
+
+/// Sealed internals: nothing outside the vault crate uses them.
+#[boundary(allowed = [])]
+pub mod sealed {
+    pub fn inner() -> u8 {
+        1
+    }
+}
+
+/// How long to wait before trying the vault again.
+#[mechanism("retry policy")]
+pub fn backoff(attempt: u32) -> u64 {
+    100 * u64::from(attempt)
+}
+
+/// Where the vault lives on disk.
+#[reads_env("VAULT_PATH")]
+pub fn vault_path() -> String {
+    std::env::var("VAULT_PATH").unwrap_or_else(|_| "/var/vault".into())
+}
+
+/// Whether to log every unseal: read here, declared nowhere.
+#[reads_env("VAULT_DEBUG")]
+pub fn debug_unseal() -> bool {
+    std::env::var("VAULT_DEBUG").is_ok()
+}
+
+/// One record as the bytes the replicas read.
+#[wire_writer]
+pub fn encode_record(id: u32, body: &[u8]) -> Vec<u8> {
+    let mut out = id.to_be_bytes().to_vec();
+    out.extend_from_slice(body);
+    out
+}
+
+/// The file header the replicas read: nothing pins its bytes yet.
+#[wire_writer]
+pub fn encode_header() -> Vec<u8> {
+    b"VLT1".to_vec()
+}
+
+/// The first sealing format; nothing uses it any more.
+pub fn seal_v1(data: &[u8]) -> Vec<u8> {
+    data.to_vec()
+}
+
+/// The sealing format that replaced v1.
+#[supersedes(crate::seal_v1)]
+pub fn seal_v2(data: &[u8]) -> Vec<u8> {
+    data.iter().rev().copied().collect()
 }
