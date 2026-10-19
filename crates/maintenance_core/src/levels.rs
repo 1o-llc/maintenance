@@ -110,7 +110,7 @@ impl LevelTable {
 }
 
 /// `sensitivity_levels! { pub TradeLevels { public = 0, internal = 1, trade_secret = 2 } }`, read.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct LevelsDecl {
     pub vis: syn::Visibility,
     pub name: syn::Ident,

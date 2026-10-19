@@ -1,8 +1,8 @@
-//! Every code this set raises, in one liaise table. Rendered `[MAINT0101] message`.
+//! Every code this set raises, in one liaise table. Rendered `[MAINT1002] message`.
 //!
-//! The macros raise the 0xxx to 5xxx codes at compile time (through `SynBuffer`, or as a constant's panic for a
-//! level word the macro cannot see); the runtime raises 2xxx when a timed test runs over, 6xxx from the checker and
-//! 7xxx reading the registry. One table, so a code means one thing wherever it is printed.
+//! The macros raise 0xxx to 5xxx and 8xxx while a crate compiles (through `SynBuffer`, or as a constant's panic for
+//! a level word the macro cannot see); the runtime raises 2050 when a timed test runs over and 2051 when its line cannot be written, the checker 6xxx, and
+//! reading or writing the registry 7xxx. One table, so a code means one thing wherever it is printed.
 
 pub use liaise_proc_macro::LiaiseCode;
 
@@ -45,12 +45,29 @@ liaise_proc_macro::liaise_codes! {
         // 5xxx: #[requires_review]
         ReviewReasonMissing = 5001 => "#[requires_review] says why: #[requires_review(reason = \"...\")]",
 
-        // 6xxx: the checker (sensitivity check)
+        // 8xxx: #[mechanism], #[boundary] / boundary!, #[supersedes], #[reads_env], #[golden], #[wire_writer]
+        MechanismName = 8001 => "#[mechanism] names its rule as a string: #[mechanism(\"retry policy\")]",
+        BoundaryAllowed = 8011 => "a boundary lists the crates that may use it: #[boundary(allowed = [\"api\"])]",
+        SupersedesPath = 8021 => "#[supersedes] names the item it replaces as a path: #[supersedes(\"crate::old::thing\")]",
+        ReadsEnvKey = 8031 => "#[reads_env] names the keys read here as strings: #[reads_env(\"DATABASE_URL\")]",
+        GoldenWriter = 8041 => "#[golden] names the writer it pins: #[golden(writer = path::to::writer)]",
+        WireWriterArgs = 8051 => "#[wire_writer] takes nothing: #[wire_writer]",
+
+        // 6xxx: the checker (maintenance check)
         CallRises = 6001 => "a call from a lower sensitivity level into a higher one",
         LevelNotInTable = 6002 => "an item names a level the workspace's level table does not have",
         TwoLevelTables = 6003 => "the workspace declares two different level tables; it has one",
-        CheckConfig = 6004 => "maintenance.toml [sensitivity] does not read",
+        CheckConfig = 6004 => "maintenance.toml does not read",
         WorkspaceUnread = 6005 => "the workspace could not be read",
+        MarkUnread = 6006 => "a mark in the source does not read",
+        MechanismTwice = 6010 => "two items claim one mechanism; a rule has one place",
+        BoundaryCrossed = 6020 => "a crate the boundary does not allow uses what is inside it",
+        SupersededStillUsed = 6030 => "the item this one supersedes still has users",
+        SupersededFree = 6031 => "the item this one supersedes has no users left; it can go",
+        SupersededGone = 6032 => "the item this one supersedes is not in the workspace",
+        EnvUndeclared = 6040 => "an environment key is read where no declaration file declares it",
+        WriterWithoutGolden = 6050 => "a wire writer has no golden test pinning its bytes",
+        GoldenWriterUnknown = 6051 => "a golden test names a writer that is not a #[wire_writer]",
 
         // 7xxx: the registry file
         RegistryUnreadable = 7001 => "the registry file could not be read",

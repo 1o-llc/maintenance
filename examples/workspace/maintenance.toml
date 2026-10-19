@@ -1,0 +1,18 @@
+[timed_test]
+default = "unit"
+
+[timed_test.classes]
+unit = "200ms"
+integration = "2s"
+# a deliberately tight class, for the test that shows a failure
+tight = "1ms"
+
+[sensitivity]
+# an item nothing marks counts as the lowest level
+unmarked = "public"
+max_rise = 0
+
+# the login path checks a password against the vault; looked at and accepted
+[[sensitivity.allow]]
+from = "api::login"
+to = "vault::check_password"

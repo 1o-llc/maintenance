@@ -20,7 +20,13 @@
 //!       "owner": "platform",
 //!       "owner_from": "vault",
 //!       "review": { "reason": "touches the key store" },
-//!       "deprecated_after": { "date": "2026-12-01", "reason": "use open_vault_v2" }
+//!       "deprecated_after": { "date": "2026-12-01", "reason": "use open_vault_v2" },
+//!       "mechanism": "vault opening",
+//!       "boundary": null,
+//!       "supersedes": "vault::legacy_open",
+//!       "reads_env": ["VAULT_PATH"],
+//!       "golden_writer": null,
+//!       "wire_writer": false
 //!     }
 //!   ]
 //! }
@@ -28,9 +34,13 @@
 //!
 //! `levels` is the workspace's level table, lowest first: a level's place in it is its rank, the bit it has in the
 //! level word. `id` is the item's canonical path (klepto's spelling: `package::module::Type::method`), `file` is
-//! relative to the workspace root, `line` is the line of the item's name. `sensitivity` and `owner` are the item's
-//! own or the nearest enclosing `mod` / `impl`'s, and `*_from` names the item they are written on; `review` and
-//! `deprecated_after` are the item's own. A field with nothing to say is `null`. Items are sorted by `id`.
+//! relative to the workspace root, `line` is the line the item starts on (its first attribute or doc line, as klepto
+//! records it). `sensitivity` and `owner` are the item's own or the nearest enclosing `mod` / `impl`'s, and `*_from`
+//! names the item they are written on; every other field is the item's own. `boundary` is the crates allowed to use
+//! what is inside a module or crate (`#[boundary]` / `boundary!`), `supersedes` the canonical id of the item this one
+//! replaces, `reads_env` the environment keys read here, `golden_writer` the writer a golden test pins, `wire_writer`
+//! whether the item is a `#[wire_writer]`. A field with nothing to say is `null`, except `reads_env` (`[]`)
+//! and `wire_writer` (`false`). Every field is always written. Items are sorted by `id`.
 //!
 //! Inside a running binary the same marks are in [`linked`]: what each attribute submitted, for a test that wants
 //! to ask its own crate.
@@ -79,6 +89,12 @@ pub struct Entry {
     pub owner_from: Option<String>,
     pub review: Option<Review>,
     pub deprecated_after: Option<Deprecation>,
+    pub mechanism: Option<String>,
+    pub boundary: Option<Vec<String>>,
+    pub supersedes: Option<String>,
+    pub reads_env: Vec<String>,
+    pub golden_writer: Option<String>,
+    pub wire_writer: bool,
 }
 
 /// `#[requires_review(reason = "...")]`.
@@ -170,7 +186,7 @@ pub fn write(workspace_root: &Path, registry: &Registry) -> Result<PathBuf, Regi
 pub struct Mark {
     /// `module_path!()` where the item is.
     pub module: &'static str,
-    /// The item's name; `impl` for an impl block (`self_ty` says of what).
+    /// The item's name; for an impl block, its self type as written; empty for the module `boundary!` is in.
     pub name: &'static str,
     pub kind: &'static str,
     pub file: &'static str,
@@ -180,11 +196,19 @@ pub struct Mark {
 
 /// Which attribute, and what it said.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum Marked {
     Sensitivity { level: &'static str, rank: u32 },
     Owner { owner: &'static str },
     Review { reason: &'static str },
     DeprecatedAfter { date: &'static str, reason: &'static str },
+    Mechanism { name: &'static str },
+    /// On a module: `name` is the module's, or empty for the module `boundary!` is written in.
+    Boundary { allowed: &'static [&'static str] },
+    Supersedes { old: &'static str },
+    ReadsEnv { keys: &'static [&'static str] },
+    Golden { writer: &'static str },
+    WireWriter,
 }
 
 inventory::collect!(Mark);
@@ -211,6 +235,12 @@ mod tests {
             owner_from: None,
             review: None,
             deprecated_after: None,
+            mechanism: None,
+            boundary: None,
+            supersedes: None,
+            reads_env: Vec::new(),
+            golden_writer: None,
+            wire_writer: false,
         }
     }
 

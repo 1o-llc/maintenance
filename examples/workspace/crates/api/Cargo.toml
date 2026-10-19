@@ -1,0 +1,13 @@
+[package]
+name = "api"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+maintenance_core = { workspace = true }
+maintenance_macros = { workspace = true }
+vault = { path = "../vault" }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt", "time"] }

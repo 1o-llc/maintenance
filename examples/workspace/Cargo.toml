@@ -1,0 +1,10 @@
+# An example workspace: two crates, a level word of its own, sensitivity marks across the crate line, and timed
+# tests. `sensitivity check .` and `timed_test report .` are run against it in the README.
+[workspace]
+resolver = "2"
+members = ["crates/vault", "crates/api"]
+
+[workspace.dependencies]
+maintenance_core = { path = "../../crates/maintenance_core" }
+maintenance_macros = { path = "../../crates/maintenance_macros" }
+big-bad-bool = "0.1.1"
