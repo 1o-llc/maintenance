@@ -1,0 +1,28 @@
+[workspace]
+resolver = "2"
+members = ["crates/maintenance_core", "crates/maintenance_macros"]
+# a workspace of its own, so its maintenance.toml and its checks are its own
+exclude = ["examples/workspace"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.85"
+license = "MIT OR Apache-2.0"
+authors = ["James Hunt <james@1o.business>"]
+repository = "https://github.com/jameshuntt/maintenance_macros"
+
+[workspace.dependencies]
+maintenance_core = { version = "0.1.0", path = "crates/maintenance_core" }
+liaise_proc_macro = "0.1.3"
+simple_impl_attr_kit = "0.2.3"
+big-bad-bool = "0.1.1"
+klepto = "0.3.0"
+syn = { version = "2", features = ["full", "extra-traits", "visit"] }
+quote = "1"
+proc-macro2 = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+inventory = "0.3"
+trybuild = "1"
