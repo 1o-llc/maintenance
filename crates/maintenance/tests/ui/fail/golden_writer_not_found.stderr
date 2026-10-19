@@ -2,7 +2,9 @@ error[E0432]: unresolved import `crate::encode_v2`
  --> tests/ui/fail/golden_writer_not_found.rs:8:1
   |
 8 | #[golden(writer = crate::encode_v2)]
-  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `encode_v2` in the root
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^---------^^
+  |                          |
+  |                          no `encode_v2` in the root
   |
   = note: this error originates in the attribute macro `golden` (in Nightly builds, run with -Z macro-backtrace for more info)
 help: a similar name exists in the module
