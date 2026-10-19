@@ -480,6 +480,12 @@ writes, and `tests/ui`: one trybuild case per refusal (`tests/ui/fail`, the comp
 case with every attribute on every kind of item it takes (`tests/ui/pass`). On Rust 1.85 the fail matrix is skipped:
 two of its cases carry the compiler's own wording (E0080, E0432), which changed after 1.85; the codes are the same.
 
+## Ownership
+
+Developed and published by James Hunt. The repository is held by the 1o organization
+(https://github.com/1o-llc). Assignment of the copyright to 1o is pending documentation. The license texts
+(LICENSE-MIT, LICENSE-APACHE) are left as they were found.
+
 ## License
 
 MIT OR Apache-2.0.

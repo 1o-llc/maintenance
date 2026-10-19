@@ -10,7 +10,7 @@ edition = "2021"
 rust-version = "1.85"
 license = "MIT OR Apache-2.0"
 authors = ["James Hunt <james@1o.business>"]
-repository = "https://github.com/jameshuntt/maintenance_macros"
+repository = "https://github.com/1o-llc/maintenance"
 
 [workspace.dependencies]
 maintenance_core = { version = "0.1.0", path = "crates/maintenance_core" }

@@ -1,8 +1,8 @@
 # Changelog
 
-## 0.1.0 (unreleased)
+## 0.1.0 (2026-10-19)
 
-the first version, not published. three crates in one workspace, as big-bad-bool and simple_impl are split: `maintenance` is what a crate depends on, `maintenance_macros` the attribute macros it re-exports, `maintenance_core` what the two of them read. the line links below are paths in this repository; they get pinned to a commit once it has a home on GitHub.
+the first version. three crates in one workspace, as big-bad-bool and simple_impl are split: `maintenance` is what a crate depends on, `maintenance_macros` the attribute macros it re-exports, `maintenance_core` what the two of them read. the paths below are paths in this repository as of commit 1f136a2: https://github.com/1o-llc/maintenance/tree/1f136a2.
 
 ### the attributes
 
