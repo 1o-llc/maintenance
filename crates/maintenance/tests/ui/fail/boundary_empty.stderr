@@ -1,0 +1,7 @@
+error: [MAINT8011] a boundary lists the crates that may use it: #[boundary(allowed = ["api"])]
+ --> tests/ui/fail/boundary_empty.rs:1:1
+  |
+1 | maintenance::boundary_here!();
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: this error originates in the macro `maintenance::boundary_here` (in Nightly builds, run with -Z macro-backtrace for more info)

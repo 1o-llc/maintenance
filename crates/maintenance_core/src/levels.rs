@@ -6,7 +6,10 @@
 //! and the checker read it the same way) and makes the same kind of word; an item names it with
 //! `#[sensitivity(level, levels = path::to::Word)]`.
 
-use big_bad_bool::{bitpack, BitFlag};
+use big_bad_bool::bitpack;
+
+/// A level word's flag, as big-bad-bool declares it.
+pub use big_bad_bool::BitFlag;
 use liaise_proc_macro::SynBuffer;
 
 use crate::codes::Code;
@@ -130,7 +133,8 @@ impl LevelsDecl {
 /// Read a `sensitivity_levels!` body. Every problem is reported, each coded and at the token it is about.
 pub fn parse_declaration(tokens: proc_macro2::TokenStream) -> syn::Result<LevelsDecl> {
     use syn::parse::Parser;
-    let read = |input: syn::parse::ParseStream<'_>| -> syn::Result<(syn::Visibility, syn::Ident, Vec<(syn::Ident, syn::LitInt)>)> {
+    type Written = (syn::Visibility, syn::Ident, Vec<(syn::Ident, syn::LitInt)>);
+    let read = |input: syn::parse::ParseStream<'_>| -> syn::Result<Written> {
         let vis: syn::Visibility = input.parse()?;
         let name: syn::Ident = input.parse()?;
         let body;

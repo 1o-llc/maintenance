@@ -5,6 +5,5 @@ resolver = "2"
 members = ["crates/vault", "crates/api", "crates/cli"]
 
 [workspace.dependencies]
-maintenance_core = { path = "../../crates/maintenance_core" }
-maintenance_macros = { path = "../../crates/maintenance_macros" }
+maintenance = { path = "../../crates/maintenance" }
 big-bad-bool = "0.1.1"

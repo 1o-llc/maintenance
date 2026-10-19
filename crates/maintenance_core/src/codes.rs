@@ -2,7 +2,7 @@
 //!
 //! The macros raise 0xxx to 5xxx and 8xxx while a crate compiles (through `SynBuffer`, or as a constant's panic for
 //! a level word the macro cannot see); the runtime raises 2050 when a timed test runs over and 2051 when its line cannot be written, the checker 6xxx, and
-//! reading or writing the registry 7xxx. One table, so a code means one thing wherever it is printed.
+//! reading or writing the registry 7xxx, the runner 9xxx. One table, so a code means one thing wherever it is printed.
 
 pub use liaise_proc_macro::LiaiseCode;
 
@@ -73,6 +73,10 @@ liaise_proc_macro::liaise_codes! {
         RegistryUnreadable = 7001 => "the registry file could not be read",
         RegistryFormat = 7002 => "the registry file is not this format",
         RegistryUnwritten = 7003 => "the registry file could not be written",
+
+        // 9xxx: the runner (maintenance's declared lines)
+        LineRefused = 9001 => "the line is not a declared maintenance line",
+        RunRefused = 9002 => "the line could not run",
     }
 }
 

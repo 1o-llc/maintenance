@@ -1,0 +1,5 @@
+error: [MAINT0001] the attribute does not read: unknown attribute key `crates` known keys: allowed
+ --> tests/ui/fail/boundary_no_allowed.rs:1:29
+  |
+1 | maintenance::boundary_here!(crates = ["api"]);
+  |                             ^^^^^^

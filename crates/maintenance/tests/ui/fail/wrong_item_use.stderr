@@ -1,0 +1,5 @@
+error: [MAINT0002] this attribute does not go on this kind of item: #[sensitivity] goes on a fn, struct, enum, union, trait, type, const, static, mod or impl
+ --> tests/ui/fail/wrong_item_use.rs:4:1
+  |
+4 | pub use std::fmt;
+  | ^^^^^^^^^^^^^^^^^

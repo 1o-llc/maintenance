@@ -201,9 +201,9 @@ checksum = "e4eba85ea1d0a966a983acd07deee566e67395d2d96b6fb39e62b5a833f1eb0b"
 
 [[package]]
 name = "globset"
-version = "0.4.20"
+version = "0.4.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "07c34a9410465b45bd9787443bc7370f37735bad04b0f0cd57ff1a3186c98988"
+checksum = "e47d37d2ae4464254884b60ab7071be2b876a9c35b696bd018ddcc76847309cd"
 dependencies = [
  "aho-corasick",
  "bstr",
@@ -310,7 +310,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f9f8bd3e56ce4dfc153cf470fffbfa98c7620958b312ca5c3a4b8d5181fd13c6"
 
 [[package]]
-name = "maintenance_core"
+name = "maintenance"
 version = "0.1.0"
 dependencies = [
  "big-bad-bool",
@@ -318,28 +318,44 @@ dependencies = [
  "inventory",
  "klepto",
  "liaise_proc_macro",
+ "maintenance_core",
+ "maintenance_macros",
+ "proc-macro2",
+ "serde",
+ "serde_json",
+ "simple_impl_derive",
+ "syn 2.0.119",
+ "toml 0.8.23",
+ "trybuild",
+ "walkdir",
+ "xccute_contract",
+ "xccute_runtime",
+]
+
+[[package]]
+name = "maintenance_core"
+version = "0.1.0"
+dependencies = [
+ "big-bad-bool",
+ "liaise_proc_macro",
  "proc-macro2",
  "quote",
  "serde",
- "serde_json",
  "simple_impl_attr_kit",
  "syn 2.0.119",
  "toml 0.8.23",
- "walkdir",
 ]
 
 [[package]]
 name = "maintenance_macros"
 version = "0.1.0"
 dependencies = [
- "big-bad-bool",
  "liaise_proc_macro",
  "maintenance_core",
  "proc-macro2",
  "quote",
  "simple_impl_attr_kit",
  "syn 2.0.119",
- "trybuild",
 ]
 
 [[package]]
@@ -347,6 +363,16 @@ name = "memchr"
 version = "2.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98"
+
+[[package]]
+name = "prettyplease"
+version = "0.2.37"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "479ca8adacdd7ce8f1fb39ce9ecccbfe93a3f1344b3d0d97f20bc0196208f62b"
+dependencies = [
+ "proc-macro2",
+ "syn 2.0.119",
+]
 
 [[package]]
 name = "proc-macro2"
@@ -511,6 +537,48 @@ dependencies = [
 ]
 
 [[package]]
+name = "simple_impl_core"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "755a025f5c6d9048d6cd5b83fd9bdb7baaed42ec959afef8391a7da3e4a0ca63"
+dependencies = [
+ "liaise_proc_macro",
+ "proc-macro2",
+ "quote",
+ "simple_impl_attr_kit",
+ "syn 2.0.119",
+]
+
+[[package]]
+name = "simple_impl_derive"
+version = "0.2.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cb1f6f05cb62e3dec0a89c2efa2d73fe8883fea280596efdbcb23d71aedfff2d"
+dependencies = [
+ "liaise_proc_macro",
+ "prettyplease",
+ "proc-macro2",
+ "quote",
+ "simple_impl_attr_kit",
+ "simple_impl_core",
+ "simple_impl_quote_kit",
+ "syn 2.0.119",
+]
+
+[[package]]
+name = "simple_impl_quote_kit"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a5aa2fa8ee642bd4d748adc0ff96d7191607b25fc9bb2d56796fee1c5a1371f7"
+dependencies = [
+ "liaise_proc_macro",
+ "proc-macro2",
+ "quote",
+ "simple_impl_attr_kit",
+ "syn 2.0.119",
+]
+
+[[package]]
 name = "stable_digest"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -542,10 +610,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "target-tuple"
-version = "1.0.2"
+name = "target-triple"
+version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "876fef147edbcbddc8ac5cbbba92c7b86519e314e86638596c09673b2ed01e7f"
+checksum = "c3a6bfce3d99adfa72d24750a61f782f3036a81e7f86d8841ee1326deaebd171"
 
 [[package]]
 name = "termcolor"
@@ -658,15 +726,15 @@ checksum = "06bdbd8cfc056b8d2e2e85f29b56a3bdbecb527cef81eb39e3e7b98af4652770"
 
 [[package]]
 name = "trybuild"
-version = "1.0.122"
+version = "1.0.119"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "62db9c92d704393fbf2132041720cc80b689f2d3f28521015c2ac866223c11b8"
+checksum = "4c5c9f7b7b1a048dd2bebdb7260b0cc71ec5587b19352fa5c3cd9e1c067103f0"
 dependencies = [
  "glob",
  "serde",
  "serde_derive",
  "serde_json",
- "target-tuple",
+ "target-triple",
  "termcolor",
  "toml 1.1.8+spec-1.1.0",
 ]
@@ -737,6 +805,22 @@ name = "winnow"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "23b97319f7b8343df12cc98938e5c3eb436064524c8d2b4e30a1d3a36eecdf81"
+
+[[package]]
+name = "xccute_contract"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "81a98787b780a66b087a214ebabbf8fb503cfc018db3b19525645012b0d7de69"
+
+[[package]]
+name = "xccute_runtime"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3c3143f95b5060959461d827b8e22fdeb99446aff78cba5ec97989fc795bcf57"
+dependencies = [
+ "sha2",
+ "xccute_contract",
+]
 
 [[package]]
 name = "zmij"

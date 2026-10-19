@@ -1,6 +1,6 @@
 //! Timed tests across the classes in maintenance.toml.
 
-use maintenance_macros::timed_test;
+use maintenance::timed_test;
 use std::time::Duration;
 
 #[timed_test(class = "integration")]

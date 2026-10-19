@@ -1,6 +1,6 @@
 //! Golden bytes: what the replicas read, pinned.
 
-use maintenance_macros::golden;
+use maintenance::golden;
 
 #[golden(writer = vault::encode_record)]
 #[test]

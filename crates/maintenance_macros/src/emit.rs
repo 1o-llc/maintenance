@@ -75,13 +75,13 @@ pub(crate) fn with_extra(target: Target, extra: TokenStream) -> TokenStream {
     }
 }
 
-/// `inventory::submit!` of one `maintenance_core::registry::Mark`.
+/// `inventory::submit!` of one `maintenance::registry::Mark`.
 pub(crate) fn mark(target: &Target, what: TokenStream) -> TokenStream {
     let (name, kind) = (&target.name, target.kind);
     let line = quote_spanned!(target.name_span=> ::core::line!());
     quote! {
-        ::maintenance_core::__private::inventory::submit! {
-            ::maintenance_core::registry::Mark {
+        ::maintenance::__private::inventory::submit! {
+            ::maintenance::registry::Mark {
                 module: ::core::module_path!(),
                 name: #name,
                 kind: #kind,

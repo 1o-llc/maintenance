@@ -35,16 +35,16 @@ pub(crate) fn sensitivity(args: TokenStream, item: TokenStream) -> TokenStream {
                 errs.push_at_ctx(read.level_span, Code::UnknownLevel, format!("`{level}`; the levels are {}", table.listed()));
                 return refused(item, errs);
             };
-            (quote!(::maintenance_core::registry::Marked::Sensitivity { level: #level, rank: #bit }), TokenStream::new())
+            (quote!(::maintenance::registry::Marked::Sensitivity { level: #level, rank: #bit }), TokenStream::new())
         }
         // a word the user declared: its flags are only known to the compiler, so the check is a constant
         Some(word) => {
-            let flags = quote!(<#word as ::maintenance_core::levels::Levels>::FLAGS);
+            let flags = quote!(<#word as ::maintenance::levels::Levels>::FLAGS);
             let message = format!("{}: `{level}` is not a flag of `{}`", Code::UnknownLevel.render(), quote!(#word).to_string().replace(' ', ""));
             let check = quote_spanned! {read.level_span=>
-                const _: () = if ::maintenance_core::levels::rank_of(#flags, #level).is_none() { ::core::panic!(#message) };
+                const _: () = if ::maintenance::levels::rank_of(#flags, #level).is_none() { ::core::panic!(#message) };
             };
-            (quote!(::maintenance_core::registry::Marked::Sensitivity { level: #level, rank: ::maintenance_core::levels::rank_or_zero(#flags, #level) }), check)
+            (quote!(::maintenance::registry::Marked::Sensitivity { level: #level, rank: ::maintenance::levels::rank_or_zero(#flags, #level) }), check)
         }
     };
     if !errs.is_empty() {
@@ -57,13 +57,13 @@ pub(crate) fn sensitivity(args: TokenStream, item: TokenStream) -> TokenStream {
 pub(crate) fn owner(args: TokenStream, item: TokenStream) -> TokenStream {
     let mut errs = SynBuffer::new();
     let read = attrs::read_owner(&as_attribute(attrs::OWNER, args), &mut errs);
-    simple_mark(item, attrs::OWNER, errs, read.map(|owner| quote!(::maintenance_core::registry::Marked::Owner { owner: #owner })))
+    simple_mark(item, attrs::OWNER, errs, read.map(|owner| quote!(::maintenance::registry::Marked::Owner { owner: #owner })))
 }
 
 pub(crate) fn requires_review(args: TokenStream, item: TokenStream) -> TokenStream {
     let mut errs = SynBuffer::new();
     let read = attrs::read_requires_review(&as_attribute(attrs::REQUIRES_REVIEW, args), &mut errs);
-    simple_mark(item, attrs::REQUIRES_REVIEW, errs, read.map(|reason| quote!(::maintenance_core::registry::Marked::Review { reason: #reason })))
+    simple_mark(item, attrs::REQUIRES_REVIEW, errs, read.map(|reason| quote!(::maintenance::registry::Marked::Review { reason: #reason })))
 }
 
 fn simple_mark(item: TokenStream, attr: &str, mut errs: SynBuffer, what: Option<TokenStream>) -> TokenStream {
@@ -110,7 +110,7 @@ pub(crate) fn deprecated_after(args: TokenStream, item: TokenStream) -> TokenStr
         attrs.insert(0, deprecated);
     }
     let (date, reason) = (&read.date, &read.reason);
-    let submit = mark(&target, quote!(::maintenance_core::registry::Marked::DeprecatedAfter { date: #date, reason: #reason }));
+    let submit = mark(&target, quote!(::maintenance::registry::Marked::DeprecatedAfter { date: #date, reason: #reason }));
     with_extra(target, submit)
 }
 
@@ -132,11 +132,11 @@ fn item_attrs(item: &mut syn::Item) -> Option<&mut Vec<syn::Attribute>> {
 pub(crate) fn mechanism(args: TokenStream, item: TokenStream) -> TokenStream {
     let mut errs = SynBuffer::new();
     let read = attrs::read_mechanism(&as_attribute(attrs::MECHANISM, args), &mut errs);
-    simple_mark(item, attrs::MECHANISM, errs, read.map(|name| quote!(::maintenance_core::registry::Marked::Mechanism { name: #name })))
+    simple_mark(item, attrs::MECHANISM, errs, read.map(|name| quote!(::maintenance::registry::Marked::Mechanism { name: #name })))
 }
 
 fn boundary_what(allowed: &[String]) -> TokenStream {
-    quote!(::maintenance_core::registry::Marked::Boundary { allowed: &[#(#allowed),*] })
+    quote!(::maintenance::registry::Marked::Boundary { allowed: &[#(#allowed),*] })
 }
 
 pub(crate) fn boundary(args: TokenStream, item: TokenStream) -> TokenStream {
@@ -159,8 +159,8 @@ pub(crate) fn boundary_here(input: TokenStream) -> TokenStream {
     let what = boundary_what(&allowed);
     let line = quote_spanned!(syn::spanned::Spanned::span(&at)=> ::core::line!());
     quote! {
-        ::maintenance_core::__private::inventory::submit! {
-            ::maintenance_core::registry::Mark { module: ::core::module_path!(), name: "", kind: "mod", file: ::core::file!(), line: #line, what: #what }
+        ::maintenance::__private::inventory::submit! {
+            ::maintenance::registry::Mark { module: ::core::module_path!(), name: "", kind: "mod", file: ::core::file!(), line: #line, what: #what }
         }
     }
 }
@@ -170,14 +170,14 @@ pub(crate) fn supersedes(args: TokenStream, item: TokenStream) -> TokenStream {
     let read = attrs::read_supersedes(&as_attribute(attrs::SUPERSEDES, args), &mut errs);
     simple_mark(item, attrs::SUPERSEDES, errs, read.map(|old| {
         let old = attrs::path_text(&old);
-        quote!(::maintenance_core::registry::Marked::Supersedes { old: #old })
+        quote!(::maintenance::registry::Marked::Supersedes { old: #old })
     }))
 }
 
 pub(crate) fn reads_env(args: TokenStream, item: TokenStream) -> TokenStream {
     let mut errs = SynBuffer::new();
     let read = attrs::read_reads_env(&as_attribute(attrs::READS_ENV, args), &mut errs);
-    simple_mark(item, attrs::READS_ENV, errs, read.map(|keys| quote!(::maintenance_core::registry::Marked::ReadsEnv { keys: &[#(#keys),*] })))
+    simple_mark(item, attrs::READS_ENV, errs, read.map(|keys| quote!(::maintenance::registry::Marked::ReadsEnv { keys: &[#(#keys),*] })))
 }
 
 pub(crate) fn golden(args: TokenStream, item: TokenStream) -> TokenStream {
@@ -190,7 +190,7 @@ pub(crate) fn golden(args: TokenStream, item: TokenStream) -> TokenStream {
     match read {
         Some(writer) if errs.is_empty() => {
             let text = attrs::path_text(&writer);
-            let submit = mark(&target, quote!(::maintenance_core::registry::Marked::Golden { writer: #text }));
+            let submit = mark(&target, quote!(::maintenance::registry::Marked::Golden { writer: #text }));
             // the writer is named as code, so a writer that does not exist is the compiler's error, on the path
             with_extra(target, quote!(#[allow(unused_imports)] use #writer as _; #submit))
         }
@@ -201,5 +201,5 @@ pub(crate) fn golden(args: TokenStream, item: TokenStream) -> TokenStream {
 pub(crate) fn wire_writer(args: TokenStream, item: TokenStream) -> TokenStream {
     let mut errs = SynBuffer::new();
     let read = attrs::read_wire_writer(&as_attribute(attrs::WIRE_WRITER, args), &mut errs);
-    simple_mark(item, attrs::WIRE_WRITER, errs, read.map(|()| quote!(::maintenance_core::registry::Marked::WireWriter)))
+    simple_mark(item, attrs::WIRE_WRITER, errs, read.map(|()| quote!(::maintenance::registry::Marked::WireWriter)))
 }

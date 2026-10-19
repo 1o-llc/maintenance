@@ -1,6 +1,6 @@
 //! The vault: the workspace's most sensitive code, marked.
 
-use maintenance_macros::{
+use maintenance::{
     boundary, boundary_here, deprecated_after, mechanism, owner, reads_env, requires_review, sensitivity, sensitivity_levels, supersedes,
     wire_writer,
 };
@@ -52,7 +52,7 @@ pub struct Vault {
 
 #[sensitivity(secret)]
 impl Vault {
-    pub fn new() -> Self {
+    pub fn open() -> Self {
         open_vault()
     }
 

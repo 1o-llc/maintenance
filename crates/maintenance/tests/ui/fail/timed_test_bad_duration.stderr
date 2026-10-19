@@ -1,0 +1,5 @@
+error: [MAINT2002] a threshold is a whole number with a unit: 500ms, 2s, 1m, 3slots, or several: 1m30s: `2 hours`: `hours` is not a unit (ms, s, m, slots)
+ --> tests/ui/fail/timed_test_bad_duration.rs:3:14
+  |
+3 | #[timed_test(max = "2 hours")]
+  |              ^^^

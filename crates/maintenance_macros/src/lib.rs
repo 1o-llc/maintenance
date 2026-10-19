@@ -15,9 +15,10 @@
 //! - `#[wire_writer]` on a function that writes bytes others read, and `#[golden(writer = path)]` on the test that
 //!   pins them: the check refuses a writer with no golden.
 //!
-//! The marks are recorded twice from one reading: in the binary (`maintenance_core::registry::linked`) and, by
-//! `sensitivity registry`, in `.maintenance/registry.json`. Every refusal is a `[MAINT....]` code from the one table
-//! in `maintenance_core::codes`. A crate using these depends on `maintenance_core` too: the expansions name it.
+//! Use them through `maintenance`, which re-exports them: the expansions name `::maintenance`. The marks are recorded
+//! twice from one reading: in the binary (`maintenance::registry::linked`) and, by `maintenance::check`, in
+//! `.maintenance/registry.json`. Every refusal is a `[MAINT....]` code from the one table in
+//! `maintenance_core::codes`.
 
 #![forbid(unsafe_code)]
 

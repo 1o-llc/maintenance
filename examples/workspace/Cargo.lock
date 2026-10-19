@@ -6,8 +6,7 @@ version = 4
 name = "api"
 version = "0.1.0"
 dependencies = [
- "maintenance_core",
- "maintenance_macros",
+ "maintenance",
  "tokio",
  "vault",
 ]
@@ -180,16 +179,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "65cd87c9a6d60536580b316ad985726104730a5151c99845f2490428ef91240a"
 
 [[package]]
+name = "maintenance"
+version = "0.1.0"
+dependencies = [
+ "inventory",
+ "maintenance_core",
+ "maintenance_macros",
+ "proc-macro2",
+ "serde",
+ "serde_json",
+ "toml",
+]
+
+[[package]]
 name = "maintenance_core"
 version = "0.1.0"
 dependencies = [
  "big-bad-bool",
- "inventory",
  "liaise_proc_macro",
  "proc-macro2",
  "quote",
  "serde",
- "serde_json",
  "simple_impl_attr_kit",
  "syn 2.0.119",
  "toml",
@@ -428,8 +438,7 @@ name = "vault"
 version = "0.1.0"
 dependencies = [
  "big-bad-bool",
- "maintenance_core",
- "maintenance_macros",
+ "maintenance",
 ]
 
 [[package]]

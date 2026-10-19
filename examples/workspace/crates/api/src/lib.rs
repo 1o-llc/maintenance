@@ -1,6 +1,6 @@
 //! The public face: what the outside world calls.
 
-use maintenance_macros::{mechanism, owner, sensitivity};
+use maintenance::{mechanism, owner, sensitivity};
 
 /// Health check: unmarked, so it counts as `public`.
 pub fn health() -> bool {
@@ -52,7 +52,7 @@ pub fn peek() -> u8 {
 
 #[cfg(test)]
 mod tests {
-    use maintenance_macros::timed_test;
+    use maintenance::timed_test;
 
     #[timed_test]
     fn health_is_quick() {

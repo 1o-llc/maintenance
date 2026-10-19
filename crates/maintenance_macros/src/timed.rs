@@ -1,5 +1,5 @@
 //! `#[timed_test]`: the threshold is decided while the crate compiles (from the attribute, else maintenance.toml),
-//! and the test runs under `maintenance_core::timing`'s clock.
+//! and the test runs under `maintenance::timed`'s clock.
 
 use liaise_proc_macro::SynBuffer;
 use maintenance_core::attrs::{self, as_attribute};
@@ -8,6 +8,16 @@ use maintenance_core::Code;
 use proc_macro2::{Span, TokenStream};
 use quote::{quote, quote_spanned};
 use syn::spanned::Spanned;
+
+/// The classes in force: the shipped ones, with `file`'s on top. A file that does not read is refused at `at`.
+fn thresholds_from(file: Option<&std::path::Path>, at: Span) -> syn::Result<Thresholds> {
+    match file {
+        Some(path) => config::load(path).map_err(|e| liaise_proc_macro::err_at_ctx(at, Code::ThresholdFile, e)).and_then(|t| {
+            Thresholds::with_file(&t.timed_test).map_err(|r| liaise_proc_macro::err_at_ctx(at, r.code, format!("{}: {}", path.display(), r.detail)))
+        }),
+        None => Ok(Thresholds::shipped()),
+    }
+}
 
 pub(crate) fn timed_test(args: TokenStream, item: TokenStream) -> TokenStream {
     let mut errs = SynBuffer::new();
@@ -40,15 +50,7 @@ pub(crate) fn timed_test(args: TokenStream, item: TokenStream) -> TokenStream {
     let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").map(std::path::PathBuf::from).unwrap_or_default();
     let file = config::find(&manifest_dir);
     let root = file.as_ref().and_then(|f| f.parent()).map(|d| d.to_owned()).unwrap_or_else(|| manifest_dir.clone());
-    let thresholds = match &file {
-        Some(path) => config::load(path)
-            .map_err(|e| liaise_proc_macro::err_at_ctx(attr_span, Code::ThresholdFile, e))
-            .and_then(|t| {
-                Thresholds::with_file(&t.timed_test).map_err(|r| liaise_proc_macro::err_at_ctx(attr_span, r.code, format!("{}: {}", path.display(), r.detail)))
-            }),
-        None => Ok(Thresholds::shipped()),
-    };
-    let thresholds = errs.absorb(thresholds);
+    let thresholds = errs.absorb(thresholds_from(file.as_deref(), attr_span));
     let resolved = match (&read, thresholds) {
         (Some(read), Some(thresholds)) => {
             let at = read.max.as_ref().or(read.class.as_ref()).map_or(attr_span, |(_, span)| *span);
@@ -91,7 +93,7 @@ pub(crate) fn timed_test(args: TokenStream, item: TokenStream) -> TokenStream {
         #(#attrs)*
         #vis #sig {
             #track
-            static __MAINTENANCE_TEST: ::maintenance_core::timed::TestMeta = ::maintenance_core::timed::TestMeta {
+            static __MAINTENANCE_TEST: ::maintenance::timed::TestMeta = ::maintenance::timed::TestMeta {
                 module: ::core::module_path!(),
                 name: #name,
                 file: ::core::file!(),
@@ -102,10 +104,37 @@ pub(crate) fn timed_test(args: TokenStream, item: TokenStream) -> TokenStream {
                 root: #root,
             };
             #asyncness fn __maintenance_timed() #output #block
-            let __maintenance_clock = ::maintenance_core::timed::start(&__MAINTENANCE_TEST);
+            let __maintenance_clock = ::maintenance::timed::start(&__MAINTENANCE_TEST);
             let __maintenance_out = #call;
             __maintenance_clock.finish();
             __maintenance_out
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn file(name: &str, text: &str) -> std::path::PathBuf {
+        let dir = std::env::temp_dir().join("maintenance_macros_tests").join(format!("{name}-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("maintenance.toml");
+        std::fs::write(&path, text).unwrap();
+        path
+    }
+
+    #[test]
+    fn a_threshold_file_that_does_not_read_is_refused_coded() {
+        let at = Span::call_site();
+        let bad = file("bad", "[timed_test]\ndefualt = \"unit\"\n");
+        let e = thresholds_from(Some(&bad), at).unwrap_err().to_string();
+        assert!(e.starts_with("[MAINT2005] maintenance.toml does not read: "), "{e}");
+        assert!(e.ends_with("unknown field `defualt`, expected `default` or `classes`"), "{e}");
+        let class = file("class", "[timed_test.classes]\nunit = \"soon\"\n");
+        assert!(thresholds_from(Some(&class), at).unwrap_err().to_string().starts_with("[MAINT2002] "));
+        let good = file("good", "[timed_test]\ndefault = \"quick\"\n[timed_test.classes]\nquick = \"50ms\"\n");
+        assert_eq!(thresholds_from(Some(&good), at).unwrap().resolve(None, None).unwrap().max_ms, 50);
+        assert_eq!(thresholds_from(None, at).unwrap(), Thresholds::shipped());
     }
 }

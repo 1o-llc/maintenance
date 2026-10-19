@@ -10,13 +10,14 @@ pub const SLOT_MS: u64 = 400;
 /// The units a threshold is written in, and how many milliseconds each is.
 pub const UNITS: &[(&str, u64)] = &[("ms", 1), ("slots", SLOT_MS), ("slot", SLOT_MS), ("s", 1_000), ("m", 60_000)];
 
-/// `"1m30s"` as milliseconds, or why it does not read.
+/// `"1m30s"` (or `"1m 30s"`) as milliseconds, or why it does not read.
 pub fn parse_ms(text: &str) -> Result<u64, String> {
     let text = text.trim();
     if text.is_empty() {
         return Err("empty".into());
     }
-    let mut rest = text;
+    let compact: String = text.chars().filter(|c| !c.is_whitespace()).collect();
+    let mut rest = compact.as_str();
     let mut total: u64 = 0;
     while !rest.is_empty() {
         let digits = rest.find(|c: char| !c.is_ascii_digit()).unwrap_or(rest.len());
@@ -72,6 +73,7 @@ mod tests {
         assert_eq!(parse_ms("1slot"), Ok(SLOT_MS));
         assert_eq!(parse_ms("1m30s"), Ok(90_000));
         assert_eq!(parse_ms(" 1s500ms "), Ok(1_500));
+        assert_eq!(parse_ms("1m 30s"), Ok(90_000));
     }
 
     #[test]
@@ -79,6 +81,7 @@ mod tests {
         assert_eq!(parse_ms(""), Err("empty".into()));
         assert_eq!(parse_ms("2"), Err("`2`: `2` has no unit".into()));
         assert_eq!(parse_ms("2h"), Err("`2h`: `h` is not a unit (ms, s, m, slots)".into()));
+        assert_eq!(parse_ms("2 hours"), Err("`2 hours`: `hours` is not a unit (ms, s, m, slots)".into()));
         assert_eq!(parse_ms("s"), Err("`s`: a number comes before each unit".into()));
         assert_eq!(parse_ms("1.5s"), Err("`1.5s`: `.` is not a unit (ms, s, m, slots)".into()));
         assert!(parse_ms("99999999999999999999ms").is_err());

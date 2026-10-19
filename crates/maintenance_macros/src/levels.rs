@@ -24,8 +24,8 @@ pub(crate) fn sensitivity_levels(input: TokenStream) -> TokenStream {
             level: u32,
         }
 
-        impl ::maintenance_core::levels::Levels for #name {
-            const FLAGS: &'static [::big_bad_bool::BitFlag] = #name::FLAGS;
+        impl ::maintenance::levels::Levels for #name {
+            const FLAGS: &'static [::maintenance::levels::BitFlag] = #name::FLAGS;
         }
     }
 }
